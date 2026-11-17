@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wave Wise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/ui-theme.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+</head>
+<body>
+
+<div id="toastHost" class="toast-host" aria-live="polite"></div>
+
+<!-- ============================================================
+     AUTH (login / signup) — 3-panel glass, theme-aware, with
+     "Skip for now" for guest browsing
+     ============================================================ -->
+<div id="authScreen" class="view auth-shell-v2">
+  <div class="auth-left">
+    <div id="authScene1"></div>
+    <div class="auth-left-scrim"></div>
+    <div id="authWaveSlot"></div>
+    <div class="auth-left-top">
+      <div class="brand"><div class="brand-mark"><img src="assets/logo.png" alt="Wave Wise" loading="eager"></div><div><b style="color:#fff">Wave Wise</b><small style="color:rgba(255,255,255,.65)">Explore · Relax · Travel</small></div></div>
+    </div>
+    <div class="auth-left-copy">
+      <span class="energy-tag"><i data-icon="sparkles"></i> Fresh coastal escapes, all summer</span>
+      <h1>Plan your next wave of adventure.</h1>
+      <div class="auth-left-features">
+        <div><span class="ic"><i data-icon="check"></i></span> Free to plan, no booking fees, ever</div>
+        <div><span class="ic"><i data-icon="external"></i></span> Every service links to its official website</div>
+        <div><span class="ic"><i data-icon="shield"></i></span> Your plans &amp; saves stay private to you</div>
+      </div>
+    </div>
+    <div class="auth-left-bottom">
+      <div class="auth-stat-strip">
+        <div><b id="authStatDest">4</b><span>Beaches</span></div>
+        <div><b id="authStatSvc">20+</b><span>Services</span></div>
+        <div><b id="authStatPkg">4</b><span>Packages</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <div class="brand"><div class="brand-mark"><img src="assets/logo.png" alt="Wave Wise" loading="eager"></div><div><b>Wave Wise</b><small>Explore · Relax · Travel</small></div></div>
+      <div class="auth-tabs">
+        <button id="authTabLogin" class="active" onclick="Auth.toggle('login')">Log in</button>
+        <button id="authTabSignup" onclick="Auth.toggle('signup')">Sign up</button>
+      </div>
+
+      <div id="authLoginPane">
+        <h2>Welcome back</h2>
+        <p style="color:var(--mist);font-size:.87rem;margin-bottom:24px">Continue planning your trip.</p>
+        <form id="loginForm" style="display:flex;flex-direction:column;gap:16px" onsubmit="return false">
+          <div class="field"><label>Email</label><input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="username"></div>
+          <div class="field pw-field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="pw-eye" onclick="Auth.togglePw('loginPassword',this)"><i data-icon="eye"></i></button></div>
+          <button type="submit" class="btn btn-primary btn-lg btn-block" onclick="Auth.login()">Sign In <i data-icon="arrowR"></i></button>
+        </form>
+        <p class="auth-switch"><button class="link" onclick="Auth.skip()">Skip for now \u2014 continue as guest</button></p>
+      </div>
+
+      <div id="authSignupPane" style="display:none">
+        <h2>Create account</h2>
+        <p style="color:var(--mist);font-size:.87rem;margin-bottom:24px">Set up in under a minute.</p>
+        <form style="display:flex;flex-direction:column;gap:16px" onsubmit="return false">
+          <div class="field"><label>Full name</label><input id="signupName" placeholder="Your name" autocomplete="name"></div>
+          <div class="field"><label>Email</label><input id="signupEmail" type="email" placeholder="you@example.com" autocomplete="username"></div>
+          <div class="field pw-field"><label>Password</label><input id="signupPassword" type="password" placeholder="Min 6 characters" autocomplete="new-password" oninput="Auth.checkStrength(this.value)">
+            <button type="button" class="pw-eye" onclick="Auth.togglePw('signupPassword',this)"><i data-icon="eye"></i></button>
+            <div class="pw-meter" id="pwMeter"><i></i><i></i><i></i><i></i></div>
+            <div class="pw-hint" id="pwHint">Use 6+ characters</div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg btn-block" onclick="Auth.signup()">Create Account <i data-icon="arrowR"></i></button>
+        </form>
+      </div>
+
+      <p class="auth-disclaimer">By continuing you agree to Wave Wise's <a href="javascript:void(0)">Terms</a> &amp; <a href="javascript:void(0)">Privacy Policy</a>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<div id="app" style="display:none">
+
+  <div class="app-shell">
+    <!-- ---------- SIDEBAR (plan-mode chrome) ---------- -->
+    <aside class="sidebar" id="sidebar" style="display:none">
+      <div class="aurora"><i></i><i></i><i></i></div>
+      <div id="sidebarWaveSlot"></div>
+      <div class="sidebar-inner">
+        <div class="sb-brand"><div class="brand-mark"><img src="assets/logo.png" alt="Wave Wise" loading="eager"></div><div><b>Wave Wise</b><small>Explore · Relax · Travel</small></div></div>
+        <div class="sb-nav" id="sbNav"></div>
+        <div id="sbPlanCard"></div>
+        <div id="sbUserSlot"></div>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <!-- mini topbar shown only on sidebar-mode pages -->
+      <div class="topbar-mini" id="topbarMini" style="display:none">
+        <button class="iconbtn" onclick="UI.toggleSidebar()" id="mobileMenuBtn" title="Fold / unfold sidebar"><i data-icon="menu"></i></button>
+        <div class="tsearch" style="flex:1;max-width:320px"><i data-icon="search"></i><input id="globalSearch" placeholder="Search…" oninput="Nav.onGlobalSearch(this.value)"></div>
+        <div style="margin-left:auto;display:flex;gap:10px;align-items:center" id="miniAvatarSlot"></div>
+      </div>
+
+      <div id="viewHost"></div>
+    </main>
+  </div>
+
+  <!-- mobile bottom nav -->
+  <nav class="bottom-nav" id="bottomNav"></nav>
+</div>
+
+<!-- ---------- PLANNER DRAWER (Build-mode only) ---------- -->
+<div class="scrim" id="drawerScrim" onclick="Drawer.close()"></div>
+<aside class="drawer" id="plannerDrawer">
+  <div class="drawer-head" id="drawerHead"></div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<!-- ---------- FEEDBACK MODAL ---------- -->
+<div class="scrim" id="fbScrim" onclick="FB.close()"></div>
+<div id="fbModal" style="position:fixed;top:50%;left:50%;translate:-50% -50%;width:min(420px,92vw);background:var(--card);border-radius:22px;box-shadow:var(--shadow-lg);z-index:210;padding:26px;display:none">
+  <h3 style="margin-bottom:4px">Give feedback</h3>
+  <p style="color:var(--mist);font-size:.85rem;margin-bottom:16px" id="fbTarget"></p>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="fbReasons"></div>
+  <textarea class="field" id="fbComment" placeholder="Anything else? (optional)" style="width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;min-height:80px;margin-bottom:16px;background:var(--card);color:var(--ink)"></textarea>
+  <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-block" onclick="FB.close()">Cancel</button><button class="btn btn-primary btn-block" onclick="FB.submit()">Submit feedback</button></div>
+</div>
+
+<!-- ---------- GUEST ACTION-GATE MODAL ---------- -->
+<div class="scrim" id="gateScrim" onclick="GateModal.close()"></div>
+<div class="gate-modal" id="gateModal">
+  <div class="ic"><i data-icon="lock"></i></div>
+  <h3 style="margin-bottom:8px">Sign in required</h3>
+  <p style="color:var(--mist);font-size:.88rem;margin-bottom:22px" id="gateText"></p>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <button class="btn btn-primary btn-block" onclick="Auth.showAuth('signup')"><i data-icon="sparkles"></i> Create free account</button>
+    <button class="btn btn-outline btn-block" onclick="Auth.showAuth('login')"><i data-icon="users"></i> I already have one</button>
+    <button class="link" style="margin:2px auto 0" onclick="GateModal.close()">Maybe later</button>
+  </div>
+</div>
+
+<!-- ---------- TRIP DIALOG (big flexible modal — replaces the Trip Summary page) ---------- -->
+<div class="scrim" id="tripScrim" onclick="TripDialog.close()"></div>
+<div class="trip-dialog" id="tripDialog">
+  <div class="trip-dialog-head">
+    <div><span class="eyebrow">Your trip</span><h3 id="tripDialogTitle">Trip</h3></div>
+    <button class="iconbtn" onclick="TripDialog.close()"><i data-icon="x"></i></button>
+  </div>
+  <div class="trip-dialog-body" id="tripDialogBody"></div>
+</div>
+
+<!-- ---------- USER GUIDE (interactive stepper) ---------- -->
+<div class="scrim" id="guideScrim" onclick="Guide.close()"></div>
+<div class="trip-dialog" id="guideDialog" style="width:min(620px,94vw)">
+  <div class="trip-dialog-head">
+    <div><span class="eyebrow" id="guideEyebrow">New here?</span><h3 id="guideHeadTitle">How Wave Wise works</h3></div>
+    <button class="iconbtn" onclick="Guide.close()"><i data-icon="x"></i></button>
+  </div>
+  <div class="trip-dialog-body">
+    <div class="guide-rail"><i id="guideRailFill" style="width:0%"></i></div>
+    <div id="guideBody"></div>
+    <div class="guide-dots" id="guideDots"></div>
+    <div id="guideNav"></div>
+  </div>
+</div>
+
+<!-- ---------- COMPARE DIALOG ---------- -->
+<div class="scrim" id="compareScrim" onclick="CompareDialog.close()"></div>
+<div class="trip-dialog" id="compareDialog">
+  <div class="trip-dialog-head">
+    <div><span class="eyebrow">Side-by-side</span><h3>Compare</h3></div>
+    <button class="iconbtn" onclick="CompareDialog.close()"><i data-icon="x"></i></button>
+  </div>
+  <div class="trip-dialog-body" id="compareDialogBody"></div>
+  <div style="padding:16px 28px;border-top:1px solid var(--line);flex:none">
+    <button class="btn btn-primary btn-block" onclick="CompareDialog.close()"><i data-icon="check"></i> Done</button>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     REAL ENGINE — Supabase, business logic, price math. Untouched.
+     ============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="js/cloud.js"></script>
+<script src="js/api.js"></script>
+<script src="js/cloud-user.js"></script>
+<script src="js/core/storage.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/store.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/interactions/reactions.js"></script>
+
+<!-- ============================================================
+     UI — Tidewell design (from UI.html), wired to the engine above.
+     ============================================================ -->
+<script src="js/tidewell-ui.js"></script>
+</body>
+</html>
